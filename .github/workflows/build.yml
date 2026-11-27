@@ -73,22 +73,27 @@ jobs:
         working-directory: ios
         run: xcodegen generate --spec project.yml
 
-      - name: Build & archive
+      - name: Build (device, no signing)
         working-directory: ios
         run: |
+          # Build directly against the iphoneos SDK. Avoid `-destination
+          # generic/platform=iOS` here: the hosted runner lacks the iOS 26
+          # device-support component and destination resolution fails even
+          # though the SDK itself is installed.
           xcodebuild -project SelfSign.xcodeproj \
             -scheme "$SCHEME" \
             -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath build/SelfSign.xcarchive \
+            -sdk iphoneos \
             CODE_SIGNING_ALLOWED=NO \
-            clean archive
+            clean build
 
       - name: Create ad-hoc signed IPA
         working-directory: ios
         run: |
+          APP=$(find build -type d -name SelfSign.app -path '*Release-iphoneos*' | head -1)
+          test -n "$APP" || { echo "SelfSign.app not found"; exit 1; }
           mkdir -p build/Payload
-          cp -R build/SelfSign.xcarchive/Products/Applications/SelfSign.app build/Payload/
+          cp -R "$APP" build/Payload/
           # Ad-hoc sign the binary + embedded frameworks so the IPA is installable
           codesign --force --deep --sign - build/Payload/SelfSign.app
           ditto -c -k --sequesterRsrc --keepParent build/Payload SelfSign-adhoc.ipa
