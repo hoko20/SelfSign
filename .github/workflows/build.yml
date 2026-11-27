@@ -27,11 +27,18 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Select Xcode 26
+      - name: Select Xcode 26 + install iOS platform
         run: |
           XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | head -1)
           if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE/Contents/Developer"; fi
           xcodebuild -version
+          # macos-26 images may ship Xcode without the iOS platform component.
+          # Install it explicitly so the deployment target (iOS 26.0) resolves.
+          if ! xcodebuild -showsdks | grep -q 'iphoneos26'; then
+            echo "Installing iOS 26 platform..."
+            xcodebuild -downloadPlatform iOS
+          fi
+          xcodebuild -showsdks | grep iphoneos
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
