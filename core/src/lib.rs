@@ -23,7 +23,7 @@ static INIT: Once = Once::new();
 
 /// Idempotent process-wide initialization. Must be called before any other
 /// entry point (installs isideload's error formatter + rustls crypto provider).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn ss_init() -> i32 {
     let mut result = 0i32;
     INIT.call_once(|| {
@@ -50,7 +50,7 @@ pub extern "C" fn ss_init() -> i32 {
 
 /// Returns a human-readable description for the last error on this thread.
 /// The buffer is overwritten on every call; `len` is the buffer capacity.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_last_error(buf: *mut i8, len: i32) -> i32 {
     if buf.is_null() || len <= 0 {
         return 0;

@@ -111,7 +111,7 @@ impl DeviceLink {
             .connect(rsd_port)
             .await
             .map_err(|e| format!("connect RSD port {rsd_port}: {e}"))?;
-        let mut handshake = RsdHandshake::new(rsd_stream)
+        let handshake = RsdHandshake::new(rsd_stream)
             .await
             .map_err(|e| format!("RSD handshake: {e}"))?;
 

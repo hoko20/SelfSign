@@ -207,18 +207,29 @@ impl Session {
                 };
 
                 // 2FA callback: emit a JSON prompt and wait for Swift's answer.
-                let two_factor = async |params: TwoFactorCallbackParams| -> Result<TwoFactorCallbackResponse, Report> {
-                    let payload = serde_json::to_string(&params)
-                        .unwrap_or_else(|_| "{}".to_string());
-                    bus.emit(0, &payload);
-                    loop {
-                        if *cancelled.lock().unwrap() {
-                            return Ok(TwoFactorCallbackResponse::Abort);
+                // `TwoFactorCallback` requires `Fn`; clone captured Arcs per call.
+                let two_factor = {
+                    let bus = Arc::clone(&bus);
+                    let cancelled = Arc::clone(&cancelled);
+                    move |params: TwoFactorCallbackParams| {
+                        let bus = Arc::clone(&bus);
+                        let cancelled = Arc::clone(&cancelled);
+                        async move {
+                            let payload = serde_json::to_string(&params)
+                                .unwrap_or_else(|_| "{}".to_string());
+                            bus.emit(0, &payload);
+                            loop {
+                                if *cancelled.lock().unwrap() {
+                                    return Ok::<TwoFactorCallbackResponse, Report>(
+                                        TwoFactorCallbackResponse::Abort,
+                                    );
+                                }
+                                if let Some(PromptAnswer::TwoFactor(resp)) = bus.take_answer() {
+                                    return Ok(resp);
+                                }
+                                tokio::time::sleep(std::time::Duration::from_millis(60)).await;
+                            }
                         }
-                        if let Some(PromptAnswer::TwoFactor(resp)) = bus.take_answer() {
-                            return Ok(resp);
-                        }
-                        tokio::time::sleep(std::time::Duration::from_millis(60)).await;
                     }
                 };
 
@@ -288,17 +299,22 @@ impl Session {
             // Free Apple ID accounts have exactly one team, so First is correct.
             let team_selection = TeamSelection::First;
 
+            // `MaxCertsCallback` requires `Fn`, so the closure must clone its
+            // captured Arc on each call and return a fresh future.
             let cert_prompt = {
                 let bus = Arc::clone(&bus);
-                async move |certs: Vec<isideload::dev::certificates::DevelopmentCertificate>| -> Result<Option<Vec<String>>, Report> {
-                    let payload = serde_json::to_string(&certs)
-                        .unwrap_or_else(|_| "[]".to_string());
-                    bus.emit(2, &payload);
-                    loop {
-                        if let Some(PromptAnswer::Certificates(selection)) = bus.take_answer() {
-                            return Ok(selection);
+                move |certs: Vec<isideload::dev::certificates::DevelopmentCertificate>| {
+                    let bus = Arc::clone(&bus);
+                    async move {
+                        let payload = serde_json::to_string(&certs)
+                            .unwrap_or_else(|_| "[]".to_string());
+                        bus.emit(2, &payload);
+                        loop {
+                            if let Some(PromptAnswer::Certificates(selection)) = bus.take_answer() {
+                                return Ok::<Option<Vec<String>>, Report>(selection);
+                            }
+                            tokio::time::sleep(std::time::Duration::from_millis(60)).await;
                         }
-                        tokio::time::sleep(std::time::Duration::from_millis(60)).await;
                     }
                 }
             };
@@ -317,7 +333,10 @@ impl Session {
             // Sign the app (produces a .app bundle in a temp dir).
             let progress_cb = {
                 let bus = Arc::clone(&bus);
-                async move |value: f32| bus.progress(value * 0.7)
+                move |value: f32| {
+                    let bus = Arc::clone(&bus);
+                    async move { bus.progress(value * 0.7) }
+                }
             };
             let (signed_app, _special) = sideloader
                 .sign_app(ipa, None, false, Some(progress_cb), None, link.udid())

@@ -60,7 +60,7 @@ unsafe fn str_from(ptr: *const c_char) -> Result<String, String> {
 ///   "team_id": null
 /// }
 /// ```
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_session_new(config_json: *const c_char) -> *mut Session {
     match str_from(config_json).and_then(|raw| {
         let cfg: ConfigJson =
@@ -91,7 +91,7 @@ pub unsafe extern "C" fn ss_session_new(config_json: *const c_char) -> *mut Sess
 }
 
 /// Register the callback Swift uses for prompts/progress/log lines.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_session_set_callback(
     session: *mut Session,
     cb: NotifyCallback,
@@ -105,7 +105,7 @@ pub unsafe extern "C" fn ss_session_set_callback(
 }
 
 /// Sign in with the Apple ID. Blocking; prompts 2FA through the callback.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_sign_in(session: *mut Session) -> c_int {
     if session.is_null() {
         return -1;
@@ -120,7 +120,7 @@ pub unsafe extern "C" fn ss_sign_in(session: *mut Session) -> c_int {
 }
 
 /// Sign + install an IPA. Blocking; emits progress through the callback.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_sign_install(session: *mut Session, ipa_path: *const c_char) -> c_int {
     if session.is_null() {
         return -1;
@@ -144,7 +144,7 @@ pub unsafe extern "C" fn ss_sign_install(session: *mut Session, ipa_path: *const
 /// Answer a pending 2FA / certificate prompt.
 /// Accepts `code:123456`, `sms:1`, `devices`, `resend`, `abort`,
 /// `cert:<serial>,<serial>`, `none`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_respond(session: *mut Session, answer: *const c_char) -> c_int {
     if session.is_null() {
         return -1;
@@ -162,7 +162,7 @@ pub unsafe extern "C" fn ss_respond(session: *mut Session, answer: *const c_char
 }
 
 /// Cancel the running operation.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_cancel(session: *mut Session) -> c_int {
     if session.is_null() {
         return -1;
@@ -172,7 +172,7 @@ pub unsafe extern "C" fn ss_cancel(session: *mut Session) -> c_int {
 }
 
 /// Free a session. Must not be called while another thread uses it.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_session_free(session: *mut Session) {
     if !session.is_null() {
         drop(Box::from_raw(session));
@@ -181,14 +181,14 @@ pub unsafe extern "C" fn ss_session_free(session: *mut Session) {
 
 /// Return the last error as a newly allocated UTF-8 string. Caller must
 /// release it with `ss_string_free()`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn ss_take_error() -> *mut c_char {
     let msg = take_last_error();
     let c = std::ffi::CString::new(msg).unwrap_or_else(|_| std::ffi::CString::new("error").unwrap());
     c.into_raw()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ss_string_free(s: *mut c_char) {
     if !s.is_null() {
         drop(std::ffi::CString::from_raw(s));
