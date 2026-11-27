@@ -95,7 +95,7 @@ final class ShortcutRouter {
         let encoded = result.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? result
         let existing = components.queryItems ?? []
         components.queryItems = existing + [URLQueryItem(name: "result", value: encoded)]
-        if let final = components?.url {
+        if let final = components.url {
             UIApplication.shared.open(final)
         }
     }
