@@ -58,7 +58,9 @@ pub unsafe extern "C" fn ss_last_error(buf: *mut i8, len: i32) -> i32 {
     let msg = error::take_last_error();
     let bytes = msg.as_bytes();
     let copy_len = bytes.len().min((len - 1) as usize);
-    std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf as *mut u8, copy_len);
-    *buf.add(copy_len) = 0;
+    unsafe {
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf as *mut u8, copy_len);
+        *buf.add(copy_len) = 0;
+    }
     copy_len as i32
 }

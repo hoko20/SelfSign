@@ -59,7 +59,7 @@ enum PromptAnswer {
     Certificates(Option<Vec<String>>),
 }
 
-struct PromptBus {
+pub(crate) struct PromptBus {
     pending: Mutex<Vec<PromptAnswer>>,
     notify: Mutex<Option<NotifyCallback>>,
     // `AtomicPtr` keeps this bus Send + Sync so callback futures satisfy

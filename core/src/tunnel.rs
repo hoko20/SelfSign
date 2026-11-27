@@ -19,8 +19,8 @@ use idevice::{
     afc::{AfcClient, opcode::AfcFopenMode},
     installation_proxy::InstallationProxyClient,
     remote_pairing::{
-        RemotePairingClient, connect_tls_psk_tunnel_native,
-        rp_pairing_file::RpPairingFile,
+        RemotePairingClient, RpPairingFile, RpPairingSocket,
+        connect_tls_psk_tunnel_native,
     },
     services::rsd::RsdHandshake,
     tcp,
@@ -67,7 +67,10 @@ impl DeviceLink {
                 set_last_error(&msg);
                 msg
             })?;
-        let mut rpc = RemotePairingClient::new(stream, machine_name);
+        // RemotePairingClient now requires RpPairingSocketProvider; wrap the
+        // raw TcpStream in RpPairingSocket (originatedBy = "host").
+        let socket = RpPairingSocket::new(stream);
+        let mut rpc = RemotePairingClient::new(socket, machine_name);
         let _ = rpc.attempt_pair_verify().await;
         rpc.validate_pairing(&mut pairing)
             .await

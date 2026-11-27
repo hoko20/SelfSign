@@ -8,7 +8,7 @@ thread_local! {
 pub fn set_last_error(message: impl AsRef<str>) {
     let msg = message.as_ref().to_string();
     LAST_ERROR.with(|cell| {
-        *cell.borrow_mut() = msg;
+        *cell.borrow_mut() = msg.clone();
     });
     tracing::error!(target: "selfsign", "{}", msg);
 }

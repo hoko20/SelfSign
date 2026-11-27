@@ -38,6 +38,13 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 rootcause = "0.12.0"
 rustls = { version = "0.23", default-features = false, features = ["ring", "tls12", "std"] }
+plist = "1.8"
+plist-macro = "0.1.6"
+
+[lints.rust]
+# FFI entry points are `unsafe extern "C"`; raw-pointer work inside them is
+# intentional. Rust 2024 denies implicit unsafe ops in unsafe fns by default.
+unsafe_op_in_unsafe_fn = "allow"
 
 [profile.release]
 opt-level = "s"

@@ -2618,6 +2618,8 @@ version = "1.0.0"
 dependencies = [
  "idevice",
  "isideload",
+ "plist",
+ "plist-macro",
  "rootcause",
  "rustls",
  "serde",
