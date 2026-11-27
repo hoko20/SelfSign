@@ -190,7 +190,6 @@ final class TunnelManager {
         }
     }
 
-    deinit {
-        if let observer { NotificationCenter.default.removeObserver(observer) }
-    }
+    // Singleton lives for the app's lifetime; the status observer is intentionally
+    // kept until process exit (no deinit needed, avoids main-actor isolation error).
 }

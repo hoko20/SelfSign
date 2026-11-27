@@ -79,7 +79,7 @@ struct InstallView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("日志", systemImage: "doc.text")
                             .font(.headline)
-                        ScrollView(.vertical, frame: true) {
+                        ScrollView(.vertical) {
                             ForEach(store.logLines, id: \.self) { line in
                                 Text(line)
                                     .font(.caption2)

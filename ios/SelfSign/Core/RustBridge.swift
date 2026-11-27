@@ -56,7 +56,7 @@ final class CoreSession: @unchecked Sendable {
         let json = try JSONEncoder().encode(config)
         let jsonString = String(decoding: json, as: UTF8.self)
         guard let handle = jsonString.withCString({ ss_session_new($0) }) else {
-            throw RustBridgeError.sessionCreationFailed(RustBridge.lastError())
+            throw RustBridgeError.sessionCreationFailed(CoreSession.lastError())
         }
         self.handle = handle
         let ctx = Unmanaged.passUnretained(self).toOpaque()
@@ -73,7 +73,7 @@ final class CoreSession: @unchecked Sendable {
         let handle = self.handle
         try await Task.detached(priority: .userInitiated) {
             if ss_sign_in(handle) != 0 {
-                throw RustBridgeError.operationFailed(RustBridge.lastError())
+                throw RustBridgeError.operationFailed(CoreSession.lastError())
             }
         }.value
     }
@@ -82,7 +82,7 @@ final class CoreSession: @unchecked Sendable {
         let handle = self.handle
         try await Task.detached(priority: .userInitiated) {
             if ipaPath.withCString({ ss_sign_install(handle, $0) }) != 0 {
-                throw RustBridgeError.operationFailed(RustBridge.lastError())
+                throw RustBridgeError.operationFailed(CoreSession.lastError())
             }
         }.value
     }

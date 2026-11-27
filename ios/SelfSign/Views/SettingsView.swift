@@ -81,13 +81,13 @@ struct ShortcutGuideView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("刷新所有即将过期应用").font(.headline)
-                    CodeBlock("selfsign://refresh")
+                    CodeBlock(text: "selfsign://refresh")
                     Text("刷新全部应用").font(.headline)
-                    CodeBlock("selfsign://refresh?all=1")
+                    CodeBlock(text: "selfsign://refresh?all=1")
                     Text("刷新指定 Bundle ID").font(.headline)
-                    CodeBlock("selfsign://refresh?bundle=com.example.app")
+                    CodeBlock(text: "selfsign://refresh?bundle=com.example.app")
                     Text("支持 x-callback-url").font(.headline)
-                    CodeBlock("selfsign://refresh?x-success=shortcuts://&x-error=shortcuts://")
+                    CodeBlock(text: "selfsign://refresh?x-success=shortcuts://&x-error=shortcuts://")
                 }
             }
             .padding()

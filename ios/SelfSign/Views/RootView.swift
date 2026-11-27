@@ -11,15 +11,15 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            Tab("应用库", systemImage: "square.stack.3d.up", value: .library) {
-                NavigationStack { LibraryView() }
-            }
-            Tab("签名", systemImage: "signature", value: .install) {
-                NavigationStack { InstallView() }
-            }
-            Tab("设置", systemImage: "gearshape", value: .settings) {
-                NavigationStack { SettingsView() }
-            }
+            NavigationStack { LibraryView() }
+                .tabItem { Label("应用库", systemImage: "square.stack.3d.up") }
+                .tag(Tab.library)
+            NavigationStack { InstallView() }
+                .tabItem { Label("签名", systemImage: "signature") }
+                .tag(Tab.install)
+            NavigationStack { SettingsView() }
+                .tabItem { Label("设置", systemImage: "gearshape") }
+                .tag(Tab.settings)
         }
         .sheet(isPresented: Bindable(store).showingSignIn) {
             SignInView()

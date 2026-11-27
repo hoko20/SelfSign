@@ -39,12 +39,7 @@ final class AppStore {
 
     // MARK: - Paths
 
-    lazy var appSupport: URL = {
-        let urls = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        let dir = urls[0].appendingPathComponent("selfsign", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
-    }()
+    let appSupport: URL
 
     var storageRoot: URL { appSupport.appendingPathComponent("storage", isDirectory: true) }
     var pairingDir: URL { appSupport.appendingPathComponent("pairings", isDirectory: true) }
@@ -52,6 +47,8 @@ final class AppStore {
     private var libraryFile: URL { appSupport.appendingPathComponent("library.json") }
 
     private init() {
+        let urls = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+        appSupport = urls[0].appendingPathComponent("selfsign", isDirectory: true)
         appleID = Keychain.load("apple_id") ?? ""
         appPassword = Keychain.load("app_password") ?? ""
         anisetteURL = UserDefaults.standard.string(forKey: "anisette_url") ?? ""
