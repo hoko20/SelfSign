@@ -91,11 +91,10 @@ final class ShortcutRouter {
 
     private func openCallback(_ key: String, result: String) {
         guard let base = callbacks[key], !base.isEmpty, let url = URL(string: base) else { return }
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
         let encoded = result.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? result
-        components?.queryItems = (components?.queryItems ?? []) + [
-            URLQueryItem(name: "result", value: encoded)
-        ]
+        let existing = components.queryItems ?? []
+        components.queryItems = existing + [URLQueryItem(name: "result", value: encoded)]
         if let final = components?.url {
             UIApplication.shared.open(final)
         }
