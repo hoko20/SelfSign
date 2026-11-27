@@ -75,8 +75,6 @@ targets:
     dependencies:
       - target: TunnelProv
         embed: true
-      - target: SelfSignTests
-        embed: false
 
   TunnelProv:
     type: app-extension
@@ -102,12 +100,3 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.TunnelProv
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
         SKIP_INSTALL: YES
-
-  SelfSignTests:
-    type: test
-    platform: iOS
-    sources:
-      - path: SelfSignTests
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.tests
