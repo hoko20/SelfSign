@@ -11,7 +11,6 @@ settings:
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
     SWIFT_VERSION: "5.10"
     TARGETED_DEVICE_FAMILY: "1,2"
-    SUPPORTED_PLATFORMS: iphoneos iphonesimulator
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: ""
     ALWAYS_SEARCH_USER_PATHS: NO
@@ -29,6 +28,20 @@ settings:
     Release:
       SWIFT_OPTIMIZATION_LEVEL: "-O"
       SWIFT_COMPILATION_MODE: wholemodule
+
+schemes:
+  SelfSign:
+    build:
+      targets:
+        SelfSign: [build, run, test, profile, analyze, archive]
+    run:
+      target: SelfSign
+    profile:
+      target: SelfSign
+    analyze:
+      target: SelfSign
+    archive:
+      target: SelfSign
 
 targets:
   SelfSign:
