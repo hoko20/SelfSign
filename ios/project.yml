@@ -1,0 +1,113 @@
+name: SelfSign
+options:
+  bundleIdPrefix: com.selfsign
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    SWIFT_VERSION: "5.10"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SUPPORTED_PLATFORMS: iphoneos iphonesimulator
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ALWAYS_SEARCH_USER_PATHS: NO
+    CLANG_ENABLE_MODULES: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    INFOPLIST_KEY_UIRequiredDeviceCapabilities: arm64
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+    INFOPLIST_KEY_CFBundleDisplayName: SelfSign
+  configs:
+    Debug:
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      GCC_OPTIMIZATION_LEVEL: "0"
+      ENABLE_TESTABILITY: YES
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      SWIFT_COMPILATION_MODE: wholemodule
+
+targets:
+  SelfSign:
+    type: application
+    platform: iOS
+    sources:
+      - path: SelfSign
+    resources:
+      - path: SelfSign/Assets.xcassets
+    entitlements:
+      path: SelfSign/SelfSign.entitlements
+      properties:
+        com.apple.developer.networking.wifi-info: true
+        com.apple.developer.networking.networkextension:
+          - packet-tunnel-provider
+        com.apple.security.application-groups:
+          - group.com.selfsign.app
+    info:
+      path: SelfSign/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: com.selfsign.refresh
+            CFBundleURLSchemes:
+              - selfsign
+        LSMinimumSystemVersion: "26.0"
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSCameraUsageDescription: Not used
+        NSLocalNetworkUsageDescription: SelfSign talks to LocalDevVPN on localhost to install signed apps.
+        ITSAppUsesNonExemptEncryption: false
+        UIBackgroundModes:
+          - processing
+    settings:
+      base:
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/../core/include"
+        LIBRARY_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/../core/target/aarch64-apple-ios/release"
+          - "$(PROJECT_DIR)/../core/target/aarch64-apple-ios-sim/release"
+        OTHER_LDFLAGS:
+          - "-lselfsign_core"
+          - "-lsqlite3"
+          - "-lz"
+    dependencies:
+      - target: TunnelProv
+        embed: true
+      - target: SelfSignTests
+        embed: false
+
+  TunnelProv:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TunnelProv
+    entitlements:
+      path: TunnelProv/TunnelProv.entitlements
+      properties:
+        com.apple.developer.networking.networkextension:
+          - packet-tunnel-provider
+        com.apple.security.application-groups:
+          - group.com.selfsign.app
+    info:
+      path: TunnelProv/Info.plist
+      properties:
+        CFBundleDisplayName: SelfSign Tunnel
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.TunnelProv
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        SKIP_INSTALL: YES
+
+  SelfSignTests:
+    type: unit-test-bundle
+    platform: iOS
+    sources:
+      - path: SelfSignTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.tests

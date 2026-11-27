@@ -1,0 +1,3 @@
+[patch.crates-io]
+isideload = { path = "../../.reference/isideload/isideload" }
+idevice = { path = "../../.reference/idevice/idevice" }

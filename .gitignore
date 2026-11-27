@@ -1,0 +1,15 @@
+# Rust
+core/target/
+
+# Xcode
+ios/SelfSign.xcodeproj/
+ios/build/
+ios/*.ipa
+*.xcuserdata
+DerivedData/
+
+# Local dependency sources (fetched by CI / build script)
+.reference/
+
+# macOS
+.DS_Store
