@@ -85,7 +85,7 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             CODE_SIGNING_ALLOWED=NO \
-            clean build
+            build
 
       - name: Create ad-hoc signed IPA
         working-directory: ios
