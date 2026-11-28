@@ -108,7 +108,7 @@ targets:
         embed: true
       - target: TunnelProv
         embed: true
-    scripts:
+    postBuildScripts:
       - name: Inject LC version info and localizations
         script: |
           INFO_PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
@@ -257,7 +257,7 @@ targets:
 
   # ------------------------------------------------------------- extensions --
   LiveProcess:
-    type: appExtension
+    type: app-extension
     platform: iOS
     sources:
       - path: ../third_party/LiveContainer/LiveProcess
@@ -277,7 +277,7 @@ targets:
         embed: false
 
   ShareExtension:
-    type: appExtension
+    type: app-extension
     platform: iOS
     sources:
       - path: ../third_party/LiveContainer/ShareExtension
@@ -298,7 +298,7 @@ targets:
         embed: false
 
   LaunchAppExtension:
-    type: extensionKitExtension
+    type: extensionkit-extension
     platform: iOS
     sources:
       - path: ../third_party/LiveContainer/LaunchAppExtension
@@ -319,7 +319,7 @@ targets:
         embed: false
 
   TunnelProv:
-    type: appExtension
+    type: app-extension
     platform: iOS
     sources:
       - path: TunnelProv
