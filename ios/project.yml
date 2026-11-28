@@ -179,6 +179,7 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/LiveContainerSwiftUI/LiveContainerSwiftUI-Bridging-Header.h
         HEADER_SEARCH_PATHS:
           - "$(inherited)"
+          - "$(BUILT_PRODUCTS_DIR)/LiveContainerSwiftUI.framework/Headers"
           - "$(OBJROOT)/$(TARGET_NAME).build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/Objects-normal/arm64"
           - $(LC_ROOT)/LiveContainer
           - $(LC_ROOT)/LiveContainerSwiftUI
