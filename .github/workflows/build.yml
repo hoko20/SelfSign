@@ -115,3 +115,60 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ios/SelfSign-adhoc.ipa
+
+  build-livecontainer:
+    name: Build LiveContainer (full-featured container)
+    # LiveContainer's official build requires Xcode 27 / iOS 26+ SDK.
+    # Kept as a separate job so a container build failure never blocks SelfSign.
+    runs-on: macos-26
+    timeout-minutes: 60
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: third_party/LiveContainer
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Select Xcode 27
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | head -1)
+          if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE/Contents/Developer"; fi
+          xcodebuild -version
+          if ! xcodebuild -showsdks | grep -q 'iphoneos26'; then
+            xcodebuild -downloadPlatform iOS
+          fi
+
+      - name: Prepare dependencies (OpenSSL.xcframework)
+        run: sh .github/prepare_dependencies.sh
+
+      - name: Build LiveContainer (device, no signing)
+        run: |
+          # Mirror the successful SelfSign approach: direct target build, no
+          # scheme destination resolution (Xcode's hosted runners lack the
+          # generic iOS device-support component).
+          xcodebuild -project LiveContainer.xcodeproj \
+            -target LiveContainer \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package LiveContainer IPA
+        run: |
+          APP=$(find build -type d -name LiveContainer.app -path '*Release-iphoneos*' | head -1)
+          test -n "$APP" || { echo "LiveContainer.app not found"; exit 1; }
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          codesign --force --deep --sign - Payload/LiveContainer.app
+          ditto -c -k --sequesterRsrc --keepParent Payload LiveContainer.ipa
+
+      - name: Upload LiveContainer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiveContainer
+          path: third_party/LiveContainer/LiveContainer.ipa
+          if-no-files-found: error
+          retention-days: 30

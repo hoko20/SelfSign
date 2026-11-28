@@ -179,6 +179,43 @@ pub unsafe extern "C" fn ss_session_free(session: *mut Session) {
     }
 }
 
+/// iOS 27+ on-device pairing. Advertises as a pairable host, produces a 6-digit
+/// PIN via `pin_cb`, and writes the resulting pairing file into `pairing_dir`.
+///
+/// BLOCKING — call from a background queue. Returns 0 on success.
+/// `pin_cb(pin_ptr, pin_len, ctx)` — the PIN is NOT null-terminated.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ss_pair_start(
+    pairing_dir: *const c_char,
+    display_name: *const c_char,
+    machine_model: *const c_char,
+    pin_cb: crate::pair::PinCallback,
+    ctx: *mut c_void,
+) -> c_int {
+    let dir = match str_from(pairing_dir) {
+        Ok(d) => d,
+        Err(e) => {
+            set_last_error(e);
+            return -1;
+        }
+    };
+    let name = str_from(display_name).unwrap_or_else(|_| "SelfSign".to_string());
+    let model = str_from(machine_model).unwrap_or_else(|_| "Mac17,7".to_string());
+    match crate::pair::run_on_device_pairing(
+        std::path::Path::new(&dir),
+        &name,
+        &model,
+        pin_cb,
+        ctx,
+    ) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_last_error(e.to_string());
+            -1
+        }
+    }
+}
+
 /// Return the last error as a newly allocated UTF-8 string. Caller must
 /// release it with `ss_string_free()`.
 #[unsafe(no_mangle)]

@@ -15,6 +15,7 @@ pub mod error;
 pub mod storage;
 pub mod session;
 pub mod tunnel;
+pub mod pair;
 pub mod ffi;
 
 use std::sync::Once;

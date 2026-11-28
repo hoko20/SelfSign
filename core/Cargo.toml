@@ -40,6 +40,8 @@ rootcause = "0.12.0"
 rustls = { version = "0.23", default-features = false, features = ["ring", "tls12", "std"] }
 plist = "1.8"
 plist-macro = "0.1.6"
+# iOS 27 pairable-host mDNS advertisement (`_remotepairing-pairable-host._tcp`).
+mdns-sd = "0.19"
 
 [lints.rust]
 # FFI entry points are `unsafe extern "C"`; raw-pointer work inside them is

@@ -19,6 +19,14 @@
             </array>
         </dict>
     </array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>livecontainer</string>
+    </array>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_remotepairing-pairable-host._tcp</string>
+    </array>
     <key>NSLocalNetworkUsageDescription</key>
     <string>SelfSign 通过 LocalDevVPN 在本机与设备服务通信，用于安装已签名应用。</string>
     <key>UIBackgroundModes</key>

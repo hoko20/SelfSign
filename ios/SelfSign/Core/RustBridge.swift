@@ -147,3 +147,49 @@ private func ss_take_error() -> UnsafeMutablePointer<CChar>?
 
 @_silgen_name("ss_string_free")
 private func ss_string_free(_ s: UnsafeMutablePointer<CChar>?)
+
+@_silgen_name("ss_pair_start")
+private func ss_pair_start(
+    _ pairingDir: UnsafePointer<CChar>,
+    _ displayName: UnsafePointer<CChar>,
+    _ machineModel: UnsafePointer<CChar>,
+    _ pinCallback: @convention(c) (UnsafePointer<CChar>?, Int32, UnsafeMutableRawPointer?) -> Void,
+    _ ctx: UnsafeMutableRawPointer?
+) -> Int32
+
+/// iOS 27+ on-device pairing. Calls the blocking Rust pairable-host on a
+/// background queue, streams the 6-digit PIN back through `onPin`, and returns
+/// when the device has completed pair-setup and the pairing file is written.
+func startOnDevicePairing(
+    pairingDir: String,
+    onPin: @escaping @Sendable (String) -> Void
+) async throws {
+    // Box the Swift closure so the C callback can reach it.
+    final class PinBox {
+        let handler: @Sendable (String) -> Void
+        init(_ h: @escaping @Sendable (String) -> Void) { handler = h }
+    }
+    let box = PinBox(onPin)
+    let ctx = Unmanaged.passUnretained(box).toOpaque()
+
+    let callback: @convention(c) (UnsafePointer<CChar>?, Int32, UnsafeMutableRawPointer?) -> Void = { ptr, len, rawCtx in
+        guard let ptr, let rawCtx, len > 0 else { return }
+        let pin = String(decoding: Data(bytes: ptr, count: Int(len)), as: UTF8.self)
+        let box = Unmanaged<PinBox>.fromOpaque(rawCtx).takeUnretainedValue()
+        box.handler(pin)
+    }
+
+    try await Task.detached(priority: .userInitiated) {
+        let result = pairingDir.withCString { dir in
+            "SelfSign".withCString { name in
+                "Mac17,7".withCString { model in
+                    ss_pair_start(dir, name, model, callback, ctx)
+                }
+            }
+        }
+        if result != 0 {
+            throw RustBridgeError.operationFailed(CoreSession.lastError())
+        }
+        _ = box // keep alive across the blocking call
+    }.value
+}

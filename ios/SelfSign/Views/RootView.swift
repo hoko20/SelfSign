@@ -7,7 +7,7 @@ struct RootView: View {
     @Environment(AppStore.self) private var store
     @State private var selection: Tab = .library
 
-    enum Tab: Hashable { case library, install, settings }
+    enum Tab: Hashable { case library, install, container, pairing, settings }
 
     var body: some View {
         TabView(selection: $selection) {
@@ -17,6 +17,12 @@ struct RootView: View {
             NavigationStack { InstallView() }
                 .tabItem { Label("签名", systemImage: "signature") }
                 .tag(Tab.install)
+            NavigationStack { ContainerView() }
+                .tabItem { Label("容器", systemImage: "cube.transparent") }
+                .tag(Tab.container)
+            NavigationStack { PairingView() }
+                .tabItem { Label("配对", systemImage: "link.circle") }
+                .tag(Tab.pairing)
             NavigationStack { SettingsView() }
                 .tabItem { Label("设置", systemImage: "gearshape") }
                 .tag(Tab.settings)
