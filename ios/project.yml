@@ -209,7 +209,7 @@ targets:
         embed: false
 
   TweakLoader:
-    type: dynamicLibrary
+    type: library.dynamic
     platform: iOS
     sources:
       - path: ../third_party/LiveContainer/TweakLoader
@@ -226,7 +226,7 @@ targets:
           - $(LC_ROOT)/litehook/src
 
   ZSign:
-    type: dynamicLibrary
+    type: library.dynamic
     platform: iOS
     sources:
       - path: ../third_party/LiveContainer/ZSign
@@ -245,7 +245,7 @@ targets:
         embed: false
 
   TestJITLess:
-    type: dynamicLibrary
+    type: library.dynamic
     platform: iOS
     sources:
       - path: ../third_party/LiveContainer/TestJITLess
