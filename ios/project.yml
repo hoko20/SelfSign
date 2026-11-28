@@ -172,6 +172,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.LiveContainerSwiftUI
         DYLIB_INSTALL_NAME_BASE: "@rpath"
         SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+        SWIFT_OBJC_INTERFACE_HEADER_NAME: LiveContainerSwiftUI-Swift.h
         SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/LiveContainerSwiftUI/LiveContainerSwiftUI-Bridging-Header.h
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
