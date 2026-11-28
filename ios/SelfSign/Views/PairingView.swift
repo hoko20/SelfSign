@@ -48,7 +48,7 @@ struct PairingView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(.glassProminent)
+                    .fill(.regularMaterial)
                     .frame(width: 64, height: 64)
                 Image(systemName: "iphone.and.arrow.forward")
                     .font(.system(size: 28, weight: .semibold))

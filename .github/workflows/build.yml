@@ -146,13 +146,23 @@ jobs:
 
       - name: Build LiveContainer (device, no signing)
         run: |
-          # Mirror the successful SelfSign approach: direct target build, no
-          # scheme destination resolution (Xcode's hosted runners lack the
-          # generic iOS device-support component).
+          # Build every required target explicitly. A single `-target
+          # LiveContainer` skips sibling frameworks (LiveContainerShared) and
+          # fails at link time; listing them all builds dependencies in order.
+          # Direct targets avoid scheme destination resolution on hosted runners.
           xcodebuild -project LiveContainer.xcodeproj \
+            -target LiveContainerShared \
+            -target LiveContainerSwiftUI \
+            -target TweakLoader \
+            -target ZSign \
+            -target TestJITLess \
+            -target SideStoreSupport \
+            -target LiveProcess \
+            -target ShareExtension \
             -target LiveContainer \
             -configuration Release \
             -sdk iphoneos \
+            -arch arm64 \
             CODE_SIGNING_ALLOWED=NO \
             build
 
