@@ -29,20 +29,6 @@ settings:
       SWIFT_OPTIMIZATION_LEVEL: "-O"
       SWIFT_COMPILATION_MODE: wholemodule
 
-schemes:
-  SelfSign:
-    build:
-      targets:
-        SelfSign: [build, run, test, profile, analyze, archive]
-    run:
-      target: SelfSign
-    profile:
-      target: SelfSign
-    analyze:
-      target: SelfSign
-    archive:
-      target: SelfSign
-
 targets:
   SelfSign:
     type: application

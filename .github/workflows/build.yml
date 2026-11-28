@@ -80,8 +80,12 @@ jobs:
           # generic/platform=iOS` here: the hosted runner lacks the iOS 26
           # device-support component and destination resolution fails even
           # though the SDK itself is installed.
+          # Use -target (not -scheme): Xcode 26.0.1 reports an empty buildable
+          # platform set for generated schemes against the iOS 26 SDK, which
+          # makes `-scheme ... build` fail with "Found no destinations".
+          # A direct target build does not perform destination resolution.
           xcodebuild -project SelfSign.xcodeproj \
-            -scheme "$SCHEME" \
+            -target "$APP_NAME" \
             -configuration Release \
             -sdk iphoneos \
             CODE_SIGNING_ALLOWED=NO \
