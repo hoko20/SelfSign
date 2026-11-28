@@ -68,7 +68,7 @@ pub fn run_on_device_pairing(
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
-        .map_err(|e| IdeviceError::Other(format!("runtime: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("runtime: {e}")))?;
 
     rt.block_on(async move {
         async_pair(out_dir, display_name, machine_model, pin_cb, pin_ctx).await
@@ -85,10 +85,10 @@ async fn async_pair(
     // Bind first so we advertise the real, OS-assigned port.
     let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0))
         .await
-        .map_err(|e| IdeviceError::Other(format!("bind: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("bind: {e}")))?;
     let port = listener
         .local_addr()
-        .map_err(|e| IdeviceError::Other(format!("local_addr: {e}")))?
+        .map_err(|e| IdeviceError::InternalError(format!("local_addr: {e}")))?
         .port();
 
     // Persistent identity: generate once, reuse on subsequent runs so an
@@ -98,9 +98,9 @@ async fn async_pair(
     let service_identifier = pairing_file.identifier().to_string();
 
     let mdns = ServiceDaemon::new()
-        .map_err(|e| IdeviceError::Other(format!("mdns daemon: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("mdns daemon: {e}")))?;
     mdns.set_service_name_len_max(30)
-        .map_err(|e| IdeviceError::Other(format!("mdns name len: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("mdns name len: {e}")))?;
     let hostname = format!("selfsign-{}.local.", &service_identifier[..8]);
     let txt = host_info.mdns_txt_records(&service_identifier);
     let properties: Vec<(&str, &str)> = txt.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
@@ -112,15 +112,15 @@ async fn async_pair(
         port,
         &properties[..],
     )
-    .and_then(|s| s.enable_addr_auto())
-    .map_err(|e| IdeviceError::Other(format!("service info: {e}")))?;
+    .map_err(|e| IdeviceError::InternalError(format!("service info: {e}")))?
+    .enable_addr_auto();
     mdns.register(service_info)
-        .map_err(|e| IdeviceError::Other(format!("mdns register: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("mdns register: {e}")))?;
 
     let (stream, peer) = listener
         .accept()
         .await
-        .map_err(|e| IdeviceError::Other(format!("accept: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("accept: {e}")))?;
     tracing::info!(target: "selfsign", "pairable host: device connected from {peer}");
 
     // Surface the PIN through FFI, then let Swift display it while the device
@@ -144,7 +144,7 @@ async fn async_pair(
     let _ = mdns.shutdown();
 
     std::fs::create_dir_all(out_dir)
-        .map_err(|e| IdeviceError::Other(format!("create pairing dir: {e}")))?;
+        .map_err(|e| IdeviceError::InternalError(format!("create pairing dir: {e}")))?;
     let out_path = out_dir.join("pairingFile.plist");
     pairing_file.write_to_file(&out_path).await?;
     tracing::info!(target: "selfsign", "paired with {} ({}) -> {}", peer.name, peer.model, out_path.display());
