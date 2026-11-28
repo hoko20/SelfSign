@@ -218,8 +218,13 @@ targets:
     settings:
       base:
         PRODUCT_NAME: TweakLoader
+        EXECUTABLE_PREFIX: ""
         MACH_O_TYPE: mh_dylib
         SKIP_INSTALL: YES
+        OTHER_LDFLAGS:
+          - "-Wl,-U,_OBJC_CLASS_$_FBSSceneParameters"
+          - "-Wl,-U,_OBJC_CLASS_$_LSApplicationWorkspace"
+          - "-Wl,-U,_OBJC_CLASS_$_DOCConfiguration"
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
           - $(LC_ROOT)/TweakLoader
@@ -235,6 +240,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: ZSign
+        EXECUTABLE_PREFIX: ""
         MACH_O_TYPE: mh_dylib
         SKIP_INSTALL: YES
         HEADER_SEARCH_PATHS:
@@ -252,6 +258,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: TestJITLess
+        EXECUTABLE_PREFIX: ""
         MACH_O_TYPE: mh_dylib
         SKIP_INSTALL: YES
 
