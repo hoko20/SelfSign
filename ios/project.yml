@@ -154,8 +154,8 @@ targets:
           - "$(inherited)"
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
-          - $(LC_ROOT)/LivePlugInSupport
-          - $(LC_ROOT)/Tweaks
+          - $(LC_ROOT)/LiveContainer/LivePlugInSupport
+          - $(LC_ROOT)/LiveContainer/Tweaks
           - $(LC_ROOT)/litehook/src
           - $(LC_ROOT)/litehook/external/include
 
