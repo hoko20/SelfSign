@@ -86,6 +86,7 @@ targets:
           - "@executable_path/Frameworks"
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/LiveContainerSwiftUI
           - $(LC_ROOT)/LiveContainerSwiftUI/Models
           - $(LC_ROOT)/LiveContainerSwiftUI/Utilities
@@ -154,6 +155,7 @@ targets:
           - "$(inherited)"
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/LiveContainer/LivePlugInSupport
           - $(LC_ROOT)/LiveContainer/Tweaks
           - $(LC_ROOT)/litehook/src
@@ -176,6 +178,8 @@ targets:
         SWIFT_OBJC_INTERFACE_HEADER_NAME: LiveContainerSwiftUI-Swift.h
         SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/LiveContainerSwiftUI/LiveContainerSwiftUI-Bridging-Header.h
         HEADER_SEARCH_PATHS:
+          - "$(inherited)"
+          - "$(OBJROOT)/$(TARGET_NAME).build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/Objects-normal/arm64"
           - $(LC_ROOT)/LiveContainer
           - $(LC_ROOT)/LiveContainerSwiftUI
           - $(LC_ROOT)/LiveContainerSwiftUI/Models
@@ -211,6 +215,7 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/SideStoreSupport/SideStore-Bridging-Header.h
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/SideStoreSupport
     entitlements:
       path: SelfSign/SelfSign.entitlements
@@ -237,6 +242,7 @@ targets:
           - "-Wl,-U,_OBJC_CLASS_$_DOCConfiguration"
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/TweakLoader
           - $(LC_ROOT)/litehook/src
 
@@ -255,6 +261,7 @@ targets:
         SKIP_INSTALL: YES
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/ZSign
+          - "$(inherited)"
           - $(LC_ROOT)/Dependencies/OpenSSL.xcframework/ios-arm64/Headers
     dependencies:
       - framework: ../third_party/LiveContainer/Dependencies/OpenSSL.xcframework
@@ -288,6 +295,7 @@ targets:
         SKIP_INSTALL: YES
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/LiveProcess
     dependencies:
       - target: LiveContainerShared
@@ -309,6 +317,7 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/ShareExtension/ShareExtension-Bridging-Header.h
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/ShareExtension
     dependencies:
       - target: LiveContainerShared
@@ -330,6 +339,7 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/LaunchAppExtension/LaunchAppExtension-Bridging-Header.h
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
+          - "$(inherited)"
           - $(LC_ROOT)/LaunchAppExtension
     dependencies:
       - target: LiveContainerShared
