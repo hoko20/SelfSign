@@ -74,8 +74,16 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app
+        PRODUCT_NAME: SelfSign
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIRequiredDeviceCapabilities: arm64
+        # LC's main.c exports LiveContainerMainC, not main().
+        OTHER_LDFLAGS:
+          - "-e"
+          - "_LiveContainerMainC"
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
         HEADER_SEARCH_PATHS:
           - $(LC_ROOT)/LiveContainer
           - $(LC_ROOT)/LiveContainerSwiftUI
