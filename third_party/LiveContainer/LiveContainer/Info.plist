@@ -2,12 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.kdt.livecontainer.bgtask.*</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>MusicHapticsSupported</key>
-	<true/>
 	<key>CFBundleDisplayName</key>
-	<string>LiveContainer</string>
+	<string>SelfSign</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -22,7 +24,7 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>LiveContainer</string>
+	<string>SelfSign</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>CFBundleIconUsesAutomaticDarkModeVariant</key>
@@ -32,7 +34,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>LiveContainer</string>
+	<string>SelfSign</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -47,6 +49,14 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>livecontainer</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.selfsign.refresh</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>selfsign</string>
 			</array>
 		</dict>
 	</array>
@@ -77,8 +87,13 @@
 		<string>livecontainer</string>
 		<string>livecontainer2</string>
 		<string>livecontainer3</string>
+		<string>selfsign</string>
 	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>MusicHapticsSupported</key>
 	<true/>
 	<key>NFCReaderUsageDescription</key>
 	<string>The guest app is requesting for this permission.</string>
@@ -226,10 +241,6 @@
 		<string>voip</string>
 		<string>processing</string>
 	</array>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.kdt.livecontainer.bgtask.*</string>
-	</array>
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>
@@ -237,83 +248,8 @@
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
-	<key>UILaunchImageFile</key>
-	<string>LaunchImage</string>
-	<key>UILaunchImages</key>
-	<array>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>7.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Portrait</string>
-			<key>UILaunchImageSize</key>
-			<string>{320, 480}</string>
-		</dict>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>7.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage-700-568h</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Portrait</string>
-			<key>UILaunchImageSize</key>
-			<string>{320, 568}</string>
-		</dict>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>7.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage-Portrait</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Portrait</string>
-			<key>UILaunchImageSize</key>
-			<string>{768, 1024}</string>
-		</dict>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>7.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage-Landscape</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Landscape</string>
-			<key>UILaunchImageSize</key>
-			<string>{768, 1024}</string>
-		</dict>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>8.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage-800-667h</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Portrait</string>
-			<key>UILaunchImageSize</key>
-			<string>{375, 667}</string>
-		</dict>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>8.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage-800-Portrait-736h</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Portrait</string>
-			<key>UILaunchImageSize</key>
-			<string>{414, 736}</string>
-		</dict>
-		<dict>
-			<key>UILaunchImageMinimumOSVersion</key>
-			<string>8.0</string>
-			<key>UILaunchImageName</key>
-			<string>LaunchImage-800-Landscape-736h</string>
-			<key>UILaunchImageOrientation</key>
-			<string>Landscape</string>
-			<key>UILaunchImageSize</key>
-			<string>{414, 736}</string>
-		</dict>
-	</array>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
+	<key>UILaunchScreen</key>
+	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

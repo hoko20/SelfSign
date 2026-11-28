@@ -5,11 +5,13 @@
 > An app launcher that runs iOS apps without actually installing them.
 > 一个 App / 一个 App ID 运行无限个 App，绕开免费账号 3 App / 10 App ID 限制，支持多版本共存、容器隔离、JIT/JIT-less、Tweak 注入、多开、AltStore 源、插件支持。
 
-## 与 SelfSign 的关系
+## 与 SelfSign 的关系（已合并为单一 App）
 
-- **SelfSign**（`ios/SelfSign/`）：个人 Apple ID 自签引擎 + 安装器 + iOS 27 端侧配对。
-- **LiveContainer**（本目录）：应用运行容器。SelfSign 将其作为 IPA 签名安装后，用户可在其中导入任意 IPA 运行，规避免费账号 3 App 限制。
-- 两者独立构建为两个 IPA，一起作为 CI artifact 交付。SelfSign 通过 `selfsign://` URL scheme 与 LiveContainer 协作。
+- **一个 IPA，一个进程**：LiveContainer 的 `main.c` 引导 + `LiveContainerShared.framework` 运行时 + `LiveContainerSwiftUI.framework` 原生 UI，与 SelfSign 的 Rust 签名引擎和 SwiftUI 页面**编译进同一个 `SelfSign.app`**。
+- 启动链：`main.c` → `LiveContainerMain()`（`LiveContainerShared.framework`）→ `dlopen(LiveContainerSwiftUI.framework)` → SwiftUI `LiveContainerSwiftUIApp.main()`。SelfSign 在 `init()` 中完成 Rust FFI 初始化并注入 `AppStore` / `ShortcutRouter` 环境。
+- UI 合并：`LCTabView` 保留原有「源 / 应用 / Tweak / 设置」Tab，新增「签名」「配对」两个 Tab（`ios/SelfSign/Views/`），共享同一份 Aqua/Liquid Glass 外观。
+- 所有二进制组件（TweakLoader / ZSign / TestJITLess / SideStoreSupport / OpenSSL / CydiaSubstrate / LiveProcess / ShareExtension / LaunchAppExtension / TunnelProv）作为**同一个 App 的内嵌框架与扩展**交付，不再是第二个 App。
+- CI 只构建一个 target `SelfSign`，只产出一个 `SelfSign-adhoc.ipa`。
 
 ## 目录分类
 

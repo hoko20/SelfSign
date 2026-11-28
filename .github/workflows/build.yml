@@ -1,4 +1,4 @@
-name: Build SelfSign IPA
+name: Build SelfSign IPA (signing + LiveContainer in one app)
 
 on:
   push:
@@ -10,30 +10,28 @@ on:
 
 env:
   APP_NAME: SelfSign
-  SCHEME: SelfSign
   RUST_TARGET: aarch64-apple-ios
 
 jobs:
   build:
-    name: Build unsigned + ad-hoc signed IPA
-    # iOS 26 SDK requires Xcode 26 / macOS 26 (Tahoe).
+    name: Build unified ad-hoc signed IPA
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
-      - name: Checkout (with submodules)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 1
 
-      - name: Select Xcode 26 + install iOS platform
+      - name: Select Xcode (27 preferred, 26 fallback) + iOS platform
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | head -1)
+          XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | head -1)
+          if [ -z "$XCODE" ]; then
+            XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | head -1)
+          fi
           if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE/Contents/Developer"; fi
           xcodebuild -version
-          # macos-26 images may ship Xcode without the iOS platform component.
-          # Install it explicitly so the deployment target (iOS 26.0) resolves.
           if ! xcodebuild -showsdks | grep -q 'iphoneos26'; then
             echo "Installing iOS 26 platform..."
             xcodebuild -downloadPlatform iOS
@@ -51,8 +49,6 @@ jobs:
           workspaces: core -> target
 
       - name: Fetch isideload / idevice sources
-        # core/.cargo/config.toml patches with "../../.reference", which resolves
-        # relative to core/ -> one level ABOVE the repository root.
         run: |
           mkdir -p ../.reference
           git clone --depth 1 https://github.com/nab138/isideload.git ../.reference/isideload
@@ -66,24 +62,22 @@ jobs:
         working-directory: core
         run: cargo build --release --target ${{ env.RUST_TARGET }}
 
+      - name: Prepare LiveContainer OpenSSL dependency
+        working-directory: third_party/LiveContainer
+        run: sh .github/prepare_dependencies.sh
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Generate Xcode project
+      - name: Generate unified Xcode project
         working-directory: ios
         run: xcodegen generate --spec project.yml
 
-      - name: Build (device, no signing)
+      - name: Build unified app (device, no signing)
         working-directory: ios
         run: |
-          # Build directly against the iphoneos SDK. Avoid `-destination
-          # generic/platform=iOS` here: the hosted runner lacks the iOS 26
-          # device-support component and destination resolution fails even
-          # though the SDK itself is installed.
-          # Use -target (not -scheme): Xcode 26.0.1 reports an empty buildable
-          # platform set for generated schemes against the iOS 26 SDK, which
-          # makes `-scheme ... build` fail with "Found no destinations".
-          # A direct target build does not perform destination resolution.
+          # One target builds the whole dependency graph: LC frameworks,
+          # dylibs, extensions and the Rust-linked Swift UI framework.
           xcodebuild -project SelfSign.xcodeproj \
             -target "$APP_NAME" \
             -configuration Release \
@@ -96,9 +90,11 @@ jobs:
         run: |
           APP=$(find build -type d -name SelfSign.app -path '*Release-iphoneos*' | head -1)
           test -n "$APP" || { echo "SelfSign.app not found"; exit 1; }
+          echo "Built app: $APP"
+          find "$APP/Frameworks" -maxdepth 1 -mindepth 1 | sort || true
+          find "$APP/PlugIns" -maxdepth 1 -mindepth 1 | sort || true
           mkdir -p build/Payload
           cp -R "$APP" build/Payload/
-          # Ad-hoc sign the binary + embedded frameworks so the IPA is installable
           codesign --force --deep --sign - build/Payload/SelfSign.app
           ditto -c -k --sequesterRsrc --keepParent build/Payload SelfSign-adhoc.ipa
 
@@ -115,70 +111,3 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ios/SelfSign-adhoc.ipa
-
-  build-livecontainer:
-    name: Build LiveContainer (full-featured container)
-    # LiveContainer's official build requires Xcode 27 / iOS 26+ SDK.
-    # Kept as a separate job so a container build failure never blocks SelfSign.
-    runs-on: macos-26
-    timeout-minutes: 60
-    continue-on-error: true
-    defaults:
-      run:
-        working-directory: third_party/LiveContainer
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Select Xcode 27
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | head -1)
-          if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE/Contents/Developer"; fi
-          xcodebuild -version
-          if ! xcodebuild -showsdks | grep -q 'iphoneos26'; then
-            xcodebuild -downloadPlatform iOS
-          fi
-
-      - name: Prepare dependencies (OpenSSL.xcframework)
-        run: sh .github/prepare_dependencies.sh
-
-      - name: Build LiveContainer (device, no signing)
-        run: |
-          # Build every required target explicitly. A single `-target
-          # LiveContainer` skips sibling frameworks (LiveContainerShared) and
-          # fails at link time; listing them all builds dependencies in order.
-          # Direct targets avoid scheme destination resolution on hosted runners.
-          xcodebuild -project LiveContainer.xcodeproj \
-            -target LiveContainerShared \
-            -target LiveContainerSwiftUI \
-            -target TweakLoader \
-            -target ZSign \
-            -target TestJITLess \
-            -target SideStoreSupport \
-            -target LiveProcess \
-            -target ShareExtension \
-            -target LiveContainer \
-            -configuration Release \
-            -sdk iphoneos \
-            -arch arm64 \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-
-      - name: Package LiveContainer IPA
-        run: |
-          APP=$(find build -type d -name LiveContainer.app -path '*Release-iphoneos*' | head -1)
-          test -n "$APP" || { echo "LiveContainer.app not found"; exit 1; }
-          mkdir -p Payload
-          cp -R "$APP" Payload/
-          codesign --force --deep --sign - Payload/LiveContainer.app
-          ditto -c -k --sequesterRsrc --keepParent Payload LiveContainer.ipa
-
-      - name: Upload LiveContainer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LiveContainer
-          path: third_party/LiveContainer/LiveContainer.ipa
-          if-no-files-found: error
-          retention-days: 30

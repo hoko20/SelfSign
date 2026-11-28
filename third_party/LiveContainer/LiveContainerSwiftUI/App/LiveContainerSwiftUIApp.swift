@@ -11,6 +11,13 @@ struct LiveContainerSwiftUIApp : SwiftUI.App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     init() {
+        // One process, one app: initialize the Rust signing engine before any
+        // SelfSign tab can issue an FFI call.
+        selfSignInit()
+        Task { @MainActor in
+            ShortcutRouter.shared.store = AppStore.shared
+        }
+
         let fm = FileManager()
         var tempApps: [LCAppModel] = []
         var tempArm32EmuApps: [LCAppModel] = []
@@ -117,6 +124,12 @@ struct LiveContainerSwiftUIApp : SwiftUI.App {
                 .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 .environmentObject(DataManager.shared.model)
                 .environmentObject(LCAppSortManager.shared)
+                .environment(AppStore.shared)
+                .environment(ShortcutRouter.shared)
+                .onOpenURL { url in
+                    // selfsign:// shortcuts are handled in-process now.
+                    ShortcutRouter.shared.handle(url)
+                }
         }
         
         if UIApplication.shared.supportsMultipleScenes, #available(iOS 16.1, *) {

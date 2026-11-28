@@ -48,6 +48,31 @@ struct LCTabView: View {
                     Label("lc.tabView.settings".loc, systemImage: "gearshape.fill")
                 }
                 .tag(LCTabIdentifier.settings)
+
+            // SelfSign is compiled into this very same app/process. These two
+            // tabs expose the Apple ID signing engine and the iOS 27 pairing
+            // flow directly, with no second IPA and no URL-scheme handoff.
+            NavigationStack {
+                InstallView()
+            }
+            .tabItem {
+                Label("签名", systemImage: "signature")
+            }
+            .tag(LCTabIdentifier.ssSign)
+
+            NavigationStack {
+                PairingView()
+            }
+            .tabItem {
+                Label("配对", systemImage: "link.circle")
+            }
+            .tag(LCTabIdentifier.ssPairing)
+        }
+        .sheet(isPresented: Bindable(AppStore.shared).showingSignIn) {
+            SignInView()
+        }
+        .overlay {
+            SelfSignOverlay()
         }
         .downloadAlert(helper: downloadHelper)
         .environmentObject(downloadHelper)

@@ -1,3 +1,18 @@
+# Single application: SelfSign (Apple ID signing) + LiveContainer (guest app
+# runner) are compiled into ONE app binary and ONE IPA.
+#
+# Mach-O layout of the produced SelfSign.app:
+#   SelfSign                          <- LiveContainer main.c bootstrap
+#   Frameworks/LiveContainerShared.framework   <- LC runtime core
+#   Frameworks/LiveContainerSwiftUI.framework   <- LC UI + SelfSign Swift UI
+#   Frameworks/ZSign.dylib, TweakLoader.dylib, TestJITLess.dylib
+#   Frameworks/SideStoreSupport.framework, OpenSSL.xcframework
+#   Frameworks/CydiaSubstrate.framework
+#   PlugIns/{LiveProcess,ShareExtension,LaunchAppExtension,TunnelProv}.appex
+#
+# LiveContainerMain() initializes LC, then dlopen()s LiveContainerSwiftUI and
+# calls its `main`. SelfSign's tabs live inside that same SwiftUI app.
+
 name: SelfSign
 options:
   bundleIdPrefix: com.selfsign
@@ -7,7 +22,6 @@ options:
 
 settings:
   base:
-    PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
     SWIFT_VERSION: "5.10"
     TARGETED_DEVICE_FAMILY: "1,2"
@@ -15,78 +29,302 @@ settings:
     DEVELOPMENT_TEAM: ""
     ALWAYS_SEARCH_USER_PATHS: NO
     CLANG_ENABLE_MODULES: YES
-    SWIFT_EMIT_LOC_STRINGS: YES
-    INFOPLIST_KEY_UIRequiredDeviceCapabilities: arm64
-    INFOPLIST_KEY_UILaunchScreen_Generation: YES
-    INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-    INFOPLIST_KEY_CFBundleDisplayName: SelfSign
+    CLANG_ENABLE_OBJC_ARC: YES
+    CLANG_CXX_LANGUAGE_STANDARD: "gnu++20"
+    GCC_C_LANGUAGE_STANDARD: gnu17
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    ONLY_ACTIVE_ARCH: NO
+    SKIP_INSTALL: NO
+    LC_ROOT: "$(PROJECT_DIR)/../third_party/LiveContainer"
+    CORE_ROOT: "$(PROJECT_DIR)/../core"
   configs:
     Debug:
       SWIFT_OPTIMIZATION_LEVEL: "-Onone"
       GCC_OPTIMIZATION_LEVEL: "0"
-      ENABLE_TESTABILITY: YES
     Release:
       SWIFT_OPTIMIZATION_LEVEL: "-O"
       SWIFT_COMPILATION_MODE: wholemodule
 
 targets:
+  # ---------------------------------------------------------------- App ----
   SelfSign:
     type: application
     platform: iOS
     sources:
-      - path: SelfSign
+      # LC's C bootstrap is the process entry point. It dlopens the shared
+      # framework and hands control to LiveContainerMain.
+      - path: ../third_party/LiveContainer/LiveContainer
+        excludes:
+          - "*.m"
+          - Tweaks
+          - LivePlugInSupport
+          - Info.plist
     resources:
+      - path: ../third_party/LiveContainer/Resources
+        excludes:
+          - Frameworks
+          - AppIconGrey60x60@2x.png
+          - AppIconGrey76x76@2x~ipad.png
+          - DefaultIcon.png
       - path: SelfSign/Assets.xcassets
     entitlements:
       path: SelfSign/SelfSign.entitlements
-      properties:
-        com.apple.developer.networking.wifi-info: true
-        com.apple.developer.networking.networkextension:
-          - packet-tunnel-provider
-        com.apple.security.application-groups:
-          - group.com.selfsign.app
     info:
-      path: SelfSign/Info.plist
-      properties:
-        CFBundleURLTypes:
-          - CFBundleURLName: com.selfsign.refresh
-            CFBundleURLSchemes:
-              - selfsign
-        LSMinimumSystemVersion: "26.0"
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
-        NSCameraUsageDescription: Not used
-        NSLocalNetworkUsageDescription: SelfSign talks to LocalDevVPN on localhost to install signed apps.
-        ITSAppUsesNonExemptEncryption: false
-        UIBackgroundModes:
-          - processing
+      path: ../third_party/LiveContainer/LiveContainer/Info.plist
     settings:
       base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_UIRequiredDeviceCapabilities: arm64
         HEADER_SEARCH_PATHS:
-          - "$(PROJECT_DIR)/../core/include"
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/LiveContainerSwiftUI
+          - $(LC_ROOT)/LiveContainerSwiftUI/Models
+          - $(LC_ROOT)/LiveContainerSwiftUI/Utilities
+          - $(LC_ROOT)/LiveContainerSwiftUI/MultitaskSupport
+          - $(LC_ROOT)/LiveContainerShared
+    dependencies:
+      - target: LiveContainerShared
+        embed: true
+      - target: LiveContainerSwiftUI
+        embed: true
+      - target: SideStoreSupport
+        embed: true
+      - target: TweakLoader
+        embed: true
+      - target: ZSign
+        embed: true
+      - target: TestJITLess
+        embed: true
+      - framework: ../third_party/LiveContainer/Dependencies/OpenSSL.xcframework
+        embed: true
+      - framework: ../third_party/LiveContainer/Resources/Frameworks/CydiaSubstrate.framework
+        embed: true
+      - target: LiveProcess
+        embed: true
+      - target: ShareExtension
+        embed: true
+      - target: LaunchAppExtension
+        embed: true
+      - target: TunnelProv
+        embed: true
+    scripts:
+      - name: Inject LC version info and localizations
+        script: |
+          INFO_PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+          /usr/libexec/PlistBuddy -c "Add :LCVersionInfo string ${CONFIGURATION} (SelfSign merged)" "$INFO_PLIST" || true
+          cp -rn "${LC_ROOT}/Resources/"*.lproj "$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH" 2>/dev/null || true
+
+  # ------------------------------------------------- LC runtime framework --
+  LiveContainerShared:
+    type: framework
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/LiveContainer
+        excludes:
+          - main.c
+          - Info.plist
+          - "*.h"
+          - Tweaks
+          - LivePlugInSupport
+      - path: ../third_party/LiveContainer/LiveContainer/LivePlugInSupport
+        excludes:
+          - "*.h"
+      - path: ../third_party/LiveContainer/LiveContainer/Tweaks
+        excludes:
+          - "*.h"
+      - path: ../third_party/LiveContainer/litehook/src
+        excludes:
+          - "*.h"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.LiveContainerShared
+        DYLIB_INSTALL_NAME_BASE: "@rpath"
+        SKIP_INSTALL: YES
+        GCC_PREPROCESSOR_DEFINITIONS:
+          - FISHHOOK_EXPORT=1
+          - "$(inherited)"
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/LivePlugInSupport
+          - $(LC_ROOT)/Tweaks
+          - $(LC_ROOT)/litehook/src
+          - $(LC_ROOT)/litehook/external/include
+
+  # ------------------------------ LC SwiftUI UI + merged SelfSign features --
+  LiveContainerSwiftUI:
+    type: framework
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/LiveContainerSwiftUI
+      - path: SelfSign/Core
+      - path: SelfSign/Views
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.LiveContainerSwiftUI
+        DYLIB_INSTALL_NAME_BASE: "@rpath"
+        SKIP_INSTALL: YES
+        SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/LiveContainerSwiftUI/LiveContainerSwiftUI-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/LiveContainerSwiftUI
+          - $(LC_ROOT)/LiveContainerSwiftUI/Models
+          - $(LC_ROOT)/LiveContainerSwiftUI/Utilities
+          - $(LC_ROOT)/LiveContainerSwiftUI/MultitaskSupport
+          - $(CORE_ROOT)/include
         LIBRARY_SEARCH_PATHS:
-          - "$(PROJECT_DIR)/../core/target/aarch64-apple-ios/release"
-          - "$(PROJECT_DIR)/../core/target/aarch64-apple-ios-sim/release"
+          - $(CORE_ROOT)/target/aarch64-apple-ios/release
+          - $(CORE_ROOT)/target/aarch64-apple-ios-sim/release
         OTHER_LDFLAGS:
           - "-lselfsign_core"
           - "-lsqlite3"
           - "-lz"
+          - "-larchive"
+          - "-framework IOKit"
+          - "-framework Security"
+          - "-Wl,-U,_OBJC_CLASS_$_RBSTarget"
     dependencies:
-      - target: TunnelProv
-        embed: true
+      - target: LiveContainerShared
+        embed: false
+
+  # ------------------------------------------------------------- frameworks --
+  SideStoreSupport:
+    type: framework
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/SideStoreSupport
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.SideStoreSupport
+        DYLIB_INSTALL_NAME_BASE: "@rpath"
+        SKIP_INSTALL: YES
+        SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/SideStoreSupport/SideStore-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/SideStoreSupport
+    entitlements:
+      path: SelfSign/SelfSign.entitlements
+    dependencies:
+      - target: LiveContainerShared
+        embed: false
+
+  TweakLoader:
+    type: dynamicLibrary
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/TweakLoader
+        excludes:
+          - "*.h"
+    settings:
+      base:
+        PRODUCT_NAME: TweakLoader
+        MACH_O_TYPE: mh_dylib
+        SKIP_INSTALL: YES
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/TweakLoader
+          - $(LC_ROOT)/litehook/src
+
+  ZSign:
+    type: dynamicLibrary
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/ZSign
+        excludes:
+          - "*.h"
+    settings:
+      base:
+        PRODUCT_NAME: ZSign
+        MACH_O_TYPE: mh_dylib
+        SKIP_INSTALL: YES
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/ZSign
+          - $(LC_ROOT)/Dependencies/OpenSSL.xcframework/ios-arm64/Headers
+    dependencies:
+      - framework: ../third_party/LiveContainer/Dependencies/OpenSSL.xcframework
+        embed: false
+
+  TestJITLess:
+    type: dynamicLibrary
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/TestJITLess
+    settings:
+      base:
+        PRODUCT_NAME: TestJITLess
+        MACH_O_TYPE: mh_dylib
+        SKIP_INSTALL: YES
+
+  # ------------------------------------------------------------- extensions --
+  LiveProcess:
+    type: appExtension
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/LiveProcess
+    info:
+      path: ../third_party/LiveContainer/LiveProcess/Info.plist
+    entitlements:
+      path: SelfSign/SelfSign.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.LiveProcess
+        SKIP_INSTALL: YES
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/LiveProcess
+    dependencies:
+      - target: LiveContainerShared
+        embed: false
+
+  ShareExtension:
+    type: appExtension
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/ShareExtension
+    info:
+      path: ../third_party/LiveContainer/ShareExtension/Info.plist
+    entitlements:
+      path: SelfSign/SelfSign.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.ShareExtension
+        SKIP_INSTALL: YES
+        SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/ShareExtension/ShareExtension-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/ShareExtension
+    dependencies:
+      - target: LiveContainerShared
+        embed: false
+
+  LaunchAppExtension:
+    type: extensionKitExtension
+    platform: iOS
+    sources:
+      - path: ../third_party/LiveContainer/LaunchAppExtension
+    info:
+      path: ../third_party/LiveContainer/LaunchAppExtension/Info.plist
+    entitlements:
+      path: SelfSign/SelfSign.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.LaunchAppExtension
+        SKIP_INSTALL: YES
+        SWIFT_OBJC_BRIDGING_HEADER: $(LC_ROOT)/LaunchAppExtension/LaunchAppExtension-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(LC_ROOT)/LiveContainer
+          - $(LC_ROOT)/LaunchAppExtension
+    dependencies:
+      - target: LiveContainerShared
+        embed: false
 
   TunnelProv:
-    type: app-extension
+    type: appExtension
     platform: iOS
     sources:
       - path: TunnelProv
     entitlements:
       path: TunnelProv/TunnelProv.entitlements
-      properties:
-        com.apple.developer.networking.networkextension:
-          - packet-tunnel-provider
-        com.apple.security.application-groups:
-          - group.com.selfsign.app
     info:
       path: TunnelProv/Info.plist
       properties:
@@ -97,5 +335,4 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.selfsign.app.TunnelProv
-        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
         SKIP_INSTALL: YES

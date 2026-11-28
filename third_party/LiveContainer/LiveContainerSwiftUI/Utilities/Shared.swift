@@ -309,6 +309,9 @@ public enum LCTabIdentifier: Hashable {
     case apps
     case tweaks
     case settings
+    // SelfSign merged tabs: Apple ID signing and iOS 27 on-device pairing.
+    case ssSign
+    case ssPairing
 }
 
 
