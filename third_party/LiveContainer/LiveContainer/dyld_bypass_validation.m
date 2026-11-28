@@ -18,6 +18,10 @@
 #include "litehook.h"
 #include "utils.h"
 
+// Single definition shared by dyld_bypass_validation.m and Tweaks/Dyld.m.
+int (*orig_dyld_fcntl)(int fildes, int cmd, void *param) = NULL;
+int (*orig_dyld_mmap)(int fildes, int cmd, void *param) = NULL;
+
 static int (*orig_fcntl)(int fildes, int cmd, void *param) = 0;
 
 // Originated from _kernelrpc_mach_vm_protect_trap
